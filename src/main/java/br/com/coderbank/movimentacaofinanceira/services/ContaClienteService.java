@@ -32,6 +32,7 @@ public class ContaClienteService {
         return String.format("%06d", random.nextInt(999999));
     }
 
+
     public ContaCliente depositar(UUID idConta,  BigDecimal valor){
         ContaCliente contaCliente = contaClienteRepository.findById(idConta)
                 .orElseThrow(() -> new RuntimeException("Conta não  encontrada."));
@@ -42,4 +43,27 @@ public class ContaClienteService {
         contaCliente.setSaldo(contaCliente.getSaldo().add(valor));
         return contaClienteRepository.save(contaCliente);
     }
+
+
+    public ContaCliente sacar(UUID idConta, BigDecimal valor) {
+        ContaCliente conta = contaClienteRepository.findById(idConta)
+                .orElseThrow(() -> new RuntimeException("Conta não encontrada."));
+
+        if (valor.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("O valor do saque deve ser maior que zero.");
+        }
+
+        if (conta.getSaldo().compareTo(valor) < 0) {
+            throw new IllegalArgumentException("Saldo insuficiente para saque.");
+        }
+
+        conta.setSaldo(conta.getSaldo().subtract(valor));
+        return contaClienteRepository.save(conta);
+    }
+
+    public ContaCliente consultarSaldo(UUID idConta) {
+        return contaClienteRepository.findById(idConta)
+                .orElseThrow(() -> new RuntimeException("Conta não encontrada."));
+    }
+
 }

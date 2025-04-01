@@ -2,7 +2,9 @@ package br.com.coderbank.movimentacaofinanceira.controller;
 
 import br.com.coderbank.movimentacaofinanceira.dtos.request.ContaClienteRequestDTO;
 import br.com.coderbank.movimentacaofinanceira.dtos.request.DepositoRequestDTO;
+import br.com.coderbank.movimentacaofinanceira.dtos.request.SaqueRequestDTO;
 import br.com.coderbank.movimentacaofinanceira.dtos.response.ContaClienteResponseDTO;
+import br.com.coderbank.movimentacaofinanceira.dtos.response.SaldoResponseDTO;
 import br.com.coderbank.movimentacaofinanceira.entities.ContaCliente;
 import br.com.coderbank.movimentacaofinanceira.services.ContaClienteService;
 import jakarta.validation.Valid;
@@ -54,5 +56,36 @@ public class ContaClienteControllerV1 {
         );
         return ResponseEntity.ok(response);
     }
+
+    @PatchMapping("/{id}/saque")
+    public ResponseEntity<ContaClienteResponseDTO> sacar(
+            @PathVariable UUID id,
+            @RequestBody @Valid SaqueRequestDTO saqueRequestDTO) {
+
+        ContaCliente contaAtualizada = contaClienteService.sacar(id, saqueRequestDTO.valor());
+
+        ContaClienteResponseDTO response = new ContaClienteResponseDTO(
+                contaAtualizada.getId(),
+                contaAtualizada.getTitular(),
+                contaAtualizada.getCpf(),
+                contaAtualizada.getNumeroConta(),
+                contaAtualizada.getAgencia(),
+                contaAtualizada.getSaldo()
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}/saldo")
+    public ResponseEntity<SaldoResponseDTO> consultarSaldo(@PathVariable UUID id) {
+        ContaCliente conta = contaClienteService.consultarSaldo(id);
+
+        SaldoResponseDTO response = new SaldoResponseDTO(conta.getTitular(), conta.getSaldo());
+
+        return ResponseEntity.ok(response);
+    }
+
+
+
 
 }
