@@ -66,4 +66,32 @@ public class ContaClienteService {
                 .orElseThrow(() -> new RuntimeException("Conta não encontrada."));
     }
 
+    public ContaCliente transferirEntreContas(UUID contaorigem, UUID contadestino, BigDecimal valor){
+
+        ContaCliente contaOrigem = contaClienteRepository.findById(contaorigem)
+                .orElseThrow(( () -> new RuntimeException("Conta Origem não encontrada.")));
+
+        ContaCliente contaDestino = contaClienteRepository.findById(contadestino)
+                .orElseThrow(( () -> new RuntimeException("Conta Destino não encontrada.")));
+
+        if (contaOrigem.getId().equals(contaDestino.getId())) {
+            throw new IllegalArgumentException("A contas devem ser diferentes.");
+        }
+
+        if (contaOrigem.getSaldo().compareTo(valor) < 0) {
+            throw new IllegalArgumentException("Saldo insuficiente para depósito.");
+        }
+
+        contaOrigem.setSaldo(contaOrigem.getSaldo().subtract(valor));
+
+        contaDestino.setSaldo(contaDestino.getSaldo().add(valor));
+
+        contaClienteRepository.save(contaOrigem);
+        contaClienteRepository.save(contaDestino);
+
+        return contaOrigem;
+
+    }
+
+
 }

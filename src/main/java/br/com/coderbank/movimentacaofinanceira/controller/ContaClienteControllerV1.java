@@ -3,6 +3,7 @@ package br.com.coderbank.movimentacaofinanceira.controller;
 import br.com.coderbank.movimentacaofinanceira.dtos.request.ContaClienteRequestDTO;
 import br.com.coderbank.movimentacaofinanceira.dtos.request.DepositoRequestDTO;
 import br.com.coderbank.movimentacaofinanceira.dtos.request.SaqueRequestDTO;
+import br.com.coderbank.movimentacaofinanceira.dtos.request.TransferenciaRequestDTO;
 import br.com.coderbank.movimentacaofinanceira.dtos.response.ContaClienteResponseDTO;
 import br.com.coderbank.movimentacaofinanceira.dtos.response.SaldoResponseDTO;
 import br.com.coderbank.movimentacaofinanceira.entities.ContaCliente;
@@ -83,6 +84,31 @@ public class ContaClienteControllerV1 {
         SaldoResponseDTO response = new SaldoResponseDTO(conta.getTitular(), conta.getSaldo());
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/transferencia")
+    public ResponseEntity<ContaClienteResponseDTO> transferenciaEntreContas(@RequestBody @Valid TransferenciaRequestDTO transferenciaRequestDTO) {
+
+        ContaCliente contaAtualizada = contaClienteService.transferirEntreContas(
+                transferenciaRequestDTO.contaorigem(),
+                transferenciaRequestDTO.contadestino(),
+                transferenciaRequestDTO.valor()
+        );
+
+        ContaClienteResponseDTO response = new ContaClienteResponseDTO(
+                contaAtualizada.getId(),
+                contaAtualizada.getTitular(),
+                contaAtualizada.getCpf(),
+                contaAtualizada.getNumeroConta(),
+                contaAtualizada.getAgencia(),
+                contaAtualizada.getSaldo()
+        );
+        return ResponseEntity.ok(response);
+
+
+
+
+
     }
 
 
