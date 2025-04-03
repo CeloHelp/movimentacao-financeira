@@ -5,25 +5,37 @@ import br.com.coderbank.movimentacaofinanceira.dtos.request.DepositoRequestDTO;
 import br.com.coderbank.movimentacaofinanceira.dtos.request.SaqueRequestDTO;
 import br.com.coderbank.movimentacaofinanceira.dtos.request.TransferenciaRequestDTO;
 import br.com.coderbank.movimentacaofinanceira.dtos.response.ContaClienteResponseDTO;
+import br.com.coderbank.movimentacaofinanceira.dtos.response.MovimentacaoResponseDTO;
 import br.com.coderbank.movimentacaofinanceira.dtos.response.SaldoResponseDTO;
 import br.com.coderbank.movimentacaofinanceira.entities.ContaCliente;
 import br.com.coderbank.movimentacaofinanceira.services.ContaClienteService;
+import br.com.coderbank.movimentacaofinanceira.services.MovimentacaoService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
+
+
 
 @RestController
 @RequestMapping("/api/v1/criarconta")
 public class ContaClienteControllerV1 {
     private final ContaClienteService service;
     private final ContaClienteService contaClienteService;
+    private final MovimentacaoService movimentacaoService;
 
-    public ContaClienteControllerV1(ContaClienteService service, ContaClienteService contaClienteService) {
+    public ContaClienteControllerV1(ContaClienteService service, ContaClienteService contaClienteService, MovimentacaoService movimentacaoService) {
         this.service = service;
         this.contaClienteService = contaClienteService;
+        this.movimentacaoService = movimentacaoService;
     }
+
+
+
+
+
 
     @PostMapping
     public ResponseEntity<ContaClienteResponseDTO> criarConta(@RequestBody @Valid ContaClienteRequestDTO dto) {
@@ -104,6 +116,24 @@ public class ContaClienteControllerV1 {
                 contaAtualizada.getSaldo()
         );
         return ResponseEntity.ok(response);
+
+
+
+
+
+    }
+
+    @GetMapping("/{id}/movimentacoes")
+    public  ResponseEntity<List<MovimentacaoResponseDTO>> listarMovimentacoes( @PathVariable UUID id) {
+        List<MovimentacaoResponseDTO> buscarConta = movimentacaoService.buscarPorConta(id);
+
+        for (MovimentacaoResponseDTO movimentacao : buscarConta) {
+            System.out.println(movimentacao.dataHora());
+        }
+
+       return ResponseEntity.ok(buscarConta);
+
+
 
 
 

@@ -1,21 +1,27 @@
 package br.com.coderbank.movimentacaofinanceira.services;
 
 import br.com.coderbank.movimentacaofinanceira.entities.ContaCliente;
+import br.com.coderbank.movimentacaofinanceira.entities.Movimentacao;
+import br.com.coderbank.movimentacaofinanceira.entities.entienums.TipoMovimentacao;
 import br.com.coderbank.movimentacaofinanceira.repositories.ContaClienteRepository;
+import br.com.coderbank.movimentacaofinanceira.repositories.MovimentacaoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Random;
 import java.util.UUID;
 
 @Service
 public class ContaClienteService {
     private final ContaClienteRepository contaClienteRepository;
+    private final MovimentacaoRepository movimentacaoRepository;
 
     @Autowired
-    public ContaClienteService(ContaClienteRepository contaClienteRepository) {
+    public ContaClienteService(ContaClienteRepository contaClienteRepository, MovimentacaoRepository movimentacaoRepository) {
         this.contaClienteRepository = contaClienteRepository;
+        this.movimentacaoRepository = movimentacaoRepository;
     }
 
     public ContaCliente criarConta (String titular, String cpf){
@@ -34,14 +40,22 @@ public class ContaClienteService {
 
 
     public ContaCliente depositar(UUID idConta,  BigDecimal valor){
-        ContaCliente contaCliente = contaClienteRepository.findById(idConta)
+        ContaCliente conta = contaClienteRepository.findById(idConta)
                 .orElseThrow(() -> new RuntimeException("Conta não  encontrada."));
 
         if (valor.compareTo(BigDecimal.ZERO) <= 0){
             throw new IllegalArgumentException("O valor do depósito deve ser maior do que zero.");
         }
-        contaCliente.setSaldo(contaCliente.getSaldo().add(valor));
-        return contaClienteRepository.save(contaCliente);
+        conta.setSaldo(conta.getSaldo().add(valor));
+
+        movimentacaoRepository.save(new Movimentacao(
+                conta,
+                valor,
+                TipoMovimentacao.DEPOSITO,
+                LocalDateTime.now(),
+                null
+        ));
+        return contaClienteRepository.save(conta);
     }
 
 
@@ -57,8 +71,18 @@ public class ContaClienteService {
             throw new IllegalArgumentException("Saldo insuficiente para saque.");
         }
 
+        movimentacaoRepository.save(new Movimentacao(
+                conta,
+                valor,
+                TipoMovimentacao.SAQUE,
+                LocalDateTime.now(),
+                null
+        ));
+
         conta.setSaldo(conta.getSaldo().subtract(valor));
         return contaClienteRepository.save(conta);
+
+
     }
 
     public ContaCliente consultarSaldo(UUID idConta) {
@@ -88,6 +112,24 @@ public class ContaClienteService {
 
         contaClienteRepository.save(contaOrigem);
         contaClienteRepository.save(contaDestino);
+
+        movimentacaoRepository.save(new Movimentacao(
+                contaOrigem,
+                valor,
+                TipoMovimentacao.TRANSFERENCIA_ENVIO,
+                LocalDateTime.now(),
+                contaDestino.getId()
+        ));
+
+        movimentacaoRepository.save(new Movimentacao(
+                contaDestino,
+                valor,
+                TipoMovimentacao.TRANSFERENCIA_RECEBIMENTO,
+                LocalDateTime.now(),
+                contaOrigem.getId()
+        ));
+
+
 
         return contaOrigem;
 
