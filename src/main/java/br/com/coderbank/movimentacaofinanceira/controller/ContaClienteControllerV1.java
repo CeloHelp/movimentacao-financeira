@@ -5,22 +5,26 @@ import br.com.coderbank.movimentacaofinanceira.dtos.request.DepositoRequestDTO;
 import br.com.coderbank.movimentacaofinanceira.dtos.request.SaqueRequestDTO;
 import br.com.coderbank.movimentacaofinanceira.dtos.request.TransferenciaRequestDTO;
 import br.com.coderbank.movimentacaofinanceira.dtos.response.ContaClienteResponseDTO;
+import br.com.coderbank.movimentacaofinanceira.dtos.response.DepositoResponseDTO;
 import br.com.coderbank.movimentacaofinanceira.dtos.response.MovimentacaoResponseDTO;
 import br.com.coderbank.movimentacaofinanceira.dtos.response.SaldoResponseDTO;
 import br.com.coderbank.movimentacaofinanceira.entities.ContaCliente;
+import br.com.coderbank.movimentacaofinanceira.repositories.ContaClienteRepository;
 import br.com.coderbank.movimentacaofinanceira.services.ContaClienteService;
 import br.com.coderbank.movimentacaofinanceira.services.MovimentacaoService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
 
 
 @RestController
-@RequestMapping("/api/v1/criarconta")
+@RequestMapping("/api/v1/contas")
 public class ContaClienteControllerV1 {
     private final ContaClienteService service;
     private final ContaClienteService contaClienteService;
@@ -38,26 +42,22 @@ public class ContaClienteControllerV1 {
 
 
     @PostMapping
-    public ResponseEntity<ContaClienteResponseDTO> criarConta(@RequestBody @Valid ContaClienteRequestDTO dto) {
-        ContaCliente conta = service.criarConta(dto.titular(), dto.cpf());
+    public ResponseEntity<ContaClienteResponseDTO> criarConta(@RequestBody @Valid ContaClienteRequestDTO contaClienteRequestDTO) {
 
-        ContaClienteResponseDTO response = new ContaClienteResponseDTO(
-                conta.getId(),
-                conta.getTitular(),
-                conta.getCpf(),
-                conta.getNumeroConta(),
-                conta.getAgencia(),
-                conta.getSaldo()
-        );
+        ContaClienteResponseDTO response = service.criarConta(contaClienteRequestDTO);
 
-        return ResponseEntity.ok(response);
+        URI location = URI.create("api/v1/contas" + response.id());
+
+        return ResponseEntity.created(location).body(response);
+
+
     }
 
     @PatchMapping("/{id}/deposito")
     public ResponseEntity<ContaClienteResponseDTO> depositar(
             @PathVariable UUID id,
             @RequestBody @Valid DepositoRequestDTO depositoRequestDTO) {
-        ContaCliente contaAtualizada = contaClienteService.depositar(id, depositoRequestDTO.valor());
+        ContaCliente contaAtualizada = contaClienteService.depositar(id,depositoRequestDTO.valor());
 
         ContaClienteResponseDTO response = new ContaClienteResponseDTO(
                 contaAtualizada.getId(),

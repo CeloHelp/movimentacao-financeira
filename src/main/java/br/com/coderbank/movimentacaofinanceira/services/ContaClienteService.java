@@ -1,10 +1,16 @@
 package br.com.coderbank.movimentacaofinanceira.services;
 
+import br.com.coderbank.movimentacaofinanceira.dtos.request.ContaClienteRequestDTO;
+import br.com.coderbank.movimentacaofinanceira.dtos.response.ContaClienteResponseDTO;
 import br.com.coderbank.movimentacaofinanceira.entities.ContaCliente;
 import br.com.coderbank.movimentacaofinanceira.entities.Movimentacao;
 import br.com.coderbank.movimentacaofinanceira.entities.entienums.TipoMovimentacao;
+import br.com.coderbank.movimentacaofinanceira.exceptions.custom.ContaException;
+import br.com.coderbank.movimentacaofinanceira.exceptions.custom.ValorInvalidoException;
+import br.com.coderbank.movimentacaofinanceira.exceptions.errormensage.MensagensErro;
 import br.com.coderbank.movimentacaofinanceira.repositories.ContaClienteRepository;
 import br.com.coderbank.movimentacaofinanceira.repositories.MovimentacaoRepository;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -24,13 +30,30 @@ public class ContaClienteService {
         this.movimentacaoRepository = movimentacaoRepository;
     }
 
-    public ContaCliente criarConta (String titular, String cpf){
-        ContaCliente contaCliente = new ContaCliente();
-        contaCliente.setTitular(titular.trim());
-        contaCliente.setCpf(cpf.trim());
-        contaCliente.setSaldo(BigDecimal.ZERO);
-        contaCliente.setNumeroConta(gerarNumeroConta());
-        return contaClienteRepository.save(contaCliente);
+    public ContaClienteResponseDTO criarConta (final ContaClienteRequestDTO contaClienteRequestDTO) {
+        var conta = new ContaCliente();
+
+        if(conta.getId() == null) {
+            throw new ContaException(MensagensErro.CONTA_NAO_ENCONTRADA);
+        }
+
+        BeanUtils.copyProperties(contaClienteRequestDTO, conta);
+        contaClienteRepository.save(conta);
+
+        return new ContaClienteResponseDTO(
+                conta.getId(),
+                conta.getTitular(),
+                conta.getCpf(),
+                conta.getNumeroConta(),
+                conta.getAgencia(),
+                conta.getSaldo()
+        );
+
+
+
+
+
+
     }
 
     private String gerarNumeroConta(){
@@ -39,36 +62,39 @@ public class ContaClienteService {
     }
 
 
-    public ContaCliente depositar(UUID idConta,  BigDecimal valor){
-        ContaCliente conta = contaClienteRepository.findById(idConta)
-                .orElseThrow(() -> new RuntimeException("Conta não  encontrada."));
+    public ContaCliente depositar(UUID idConta, BigDecimal valor) {
+        ContaCliente conta = buscarContaPorId(idConta);
+        validarValorDeposito(valor);
+        return atualizarSaldo(conta, valor);
+    }
 
-        if (valor.compareTo(BigDecimal.ZERO) <= 0){
-            throw new IllegalArgumentException("O valor do depósito deve ser maior do que zero.");
+    private ContaCliente buscarContaPorId(UUID idConta) {
+        return contaClienteRepository.findById(idConta)
+                .orElseThrow(() -> new ContaException(MensagensErro.CONTA_NAO_ENCONTRADA));
+    }
+
+    private void validarValorDeposito(BigDecimal valor) {
+        if (valor.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ValorInvalidoException(MensagensErro.VALOR_INVALIDO);
         }
-        conta.setSaldo(conta.getSaldo().add(valor));
+    }
 
-        movimentacaoRepository.save(new Movimentacao(
-                conta,
-                valor,
-                TipoMovimentacao.DEPOSITO,
-                LocalDateTime.now(),
-                null
-        ));
+    private ContaCliente atualizarSaldo(ContaCliente conta, BigDecimal valor) {
+        conta.setSaldo(conta.getSaldo().add(valor));
         return contaClienteRepository.save(conta);
     }
 
 
     public ContaCliente sacar(UUID idConta, BigDecimal valor) {
         ContaCliente conta = contaClienteRepository.findById(idConta)
-                .orElseThrow(() -> new RuntimeException("Conta não encontrada."));
+                .orElseThrow(() -> new ContaException(MensagensErro.CONTA_NAO_ENCONTRADA));
 
         if (valor.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("O valor do saque deve ser maior que zero.");
+            throw new ValorInvalidoException(MensagensErro.VALOR_INVALIDO);
         }
 
         if (conta.getSaldo().compareTo(valor) < 0) {
-            throw new IllegalArgumentException("Saldo insuficiente para saque.");
+            throw new ValorInvalidoException(MensagensErro.SALDO_INSUFICIENTE);
         }
 
         movimentacaoRepository.save(new Movimentacao(
@@ -87,23 +113,23 @@ public class ContaClienteService {
 
     public ContaCliente consultarSaldo(UUID idConta) {
         return contaClienteRepository.findById(idConta)
-                .orElseThrow(() -> new RuntimeException("Conta não encontrada."));
+                .orElseThrow(() -> new ContaException(MensagensErro.CONTA_NAO_ENCONTRADA));
     }
 
     public ContaCliente transferirEntreContas(UUID contaorigem, UUID contadestino, BigDecimal valor){
 
         ContaCliente contaOrigem = contaClienteRepository.findById(contaorigem)
-                .orElseThrow(( () -> new RuntimeException("Conta Origem não encontrada.")));
+                .orElseThrow(( () -> new ContaException(MensagensErro.CONTA_NAO_ENCONTRADA + "Conta Origem não encontrada.")));
 
         ContaCliente contaDestino = contaClienteRepository.findById(contadestino)
-                .orElseThrow(( () -> new RuntimeException("Conta Destino não encontrada.")));
+                .orElseThrow(( () -> new ContaException(MensagensErro.CONTA_NAO_ENCONTRADA + "Conta Destino não encontrada.")));
 
         if (contaOrigem.getId().equals(contaDestino.getId())) {
-            throw new IllegalArgumentException("A contas devem ser diferentes.");
+            throw new ContaException(MensagensErro.CONTAS_IGUAIS);
         }
 
         if (contaOrigem.getSaldo().compareTo(valor) < 0) {
-            throw new IllegalArgumentException("Saldo insuficiente para depósito.");
+            throw new ValorInvalidoException("Saldo insuficiente para depósito.");
         }
 
         contaOrigem.setSaldo(contaOrigem.getSaldo().subtract(valor));
