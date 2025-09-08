@@ -1,32 +1,39 @@
-# 💰 Movimentação Financeira
+# 💰 Movimentação Financeira API
 
-> Aplicação em Java para controle de movimentações financeiras (entradas e saídas).
+> API REST desenvolvida em Java para controle de movimentações financeiras (entradas e saídas).
 
-Este projeto foi desenvolvido para gerenciar transações financeiras de forma simples e organizada, permitindo registrar operações de crédito e débito, consultar saldos e gerar relatórios básicos.
+Este projeto foi criado como desafio pessoal para **praticar desenvolvimento de APIs REST** em Java.  
+A aplicação permite registrar movimentações financeiras (créditos e débitos), consultar saldos e listar transações.
 
 ---
 
 ## 🚀 Funcionalidades
 
-- Registro de movimentações (crédito e débito);
-- Consulta de saldo total;
-- Relatórios de entradas e saídas;
-- Persistência de dados (ajustar conforme sua implementação atual);
-- Testes unitários (se houver no projeto).
+- ➕ **Registrar crédito**
+- ➖ **Registrar débito**
+- 📋 **Listar todas as movimentações**
+- 💵 **Consultar saldo total**
 
 ---
 
 ## 🛠 Tecnologias Utilizadas
 
 - **Java 17+**
-- **Gradle** para gerenciamento de build
-- **JUnit 5** (se já houver testes configurados)
-- **[Adicionar aqui: Banco de dados ou forma de persistência, ex.: SQLite, H2, arquivo local]**
+- **Spring Boot** (framework principal da API REST)
+- **Gradle** (gerenciamento de build e dependências)
+- **Spring Data JPA** (persistência)
+- **Banco de dados H2 (em memória)** para testes
+- **JUnit 5** e **Mockito** (testes unitários)
 
 ---
 
 ## ▶️ Como Executar
 
+### Pré-requisitos
+- [Java 17+](https://adoptium.net/)
+- [Gradle](https://gradle.org/) (ou usar o wrapper incluso)
+
+### Passos
 1. Clone o repositório:
    ```bash
    git clone https://github.com/CeloHelp/movimentacao-financeira.git
